@@ -11,14 +11,14 @@ DHT dht(DHTPIN, DHTTYPE);
 int ready_to_send = 1;
 
 // WiFi PARAMETERS
-const char *ssid = "Casa Chieri Sicuro 3"; // Enter your WiFi name
-const char *password = "MRHPR0WUX2";  // Enter WiFi password
+const char *ssid = "Casa Chieri Sicuro 4"; // Enter your WiFi name
+const char *password = "IJKs/@VOdn12R`CHKIJei@zh";  // Enter WiFi password
 const int MAXWIFITRIES = 50;
 
 
 // MQTT BROKER
 // Using public MQTT broker
-const char *mqtt_broker = "mqtt.eclipseprojects.io";
+const char *mqtt_broker = "filipi.local";
 const char *topic = "topic/test/load";
 const char *mqtt_username = "cell_publisher";
 //const char *mqtt_password = "publisher";
@@ -59,7 +59,7 @@ bool connectMqtt() {
   //connecting to a mqtt broker
   client.setServer(mqtt_broker, mqtt_port);
   client.setCallback(callback);
-  String client_id = "cestino-";
+  String client_id = "XXXX-";
   client_id += String(WiFi.macAddress());
   Serial.printf("Connecting to MQTT broker ...\n", client_id.c_str());
   if (client.connect(client_id.c_str())) {
@@ -129,11 +129,6 @@ void setup() {
   // if connection returns false
   if (!connectWiFi()) {
     Serial.println("WiFi connection failed");
-    //while(true);
-    // go back to sleep
-    Serial.println("Going to sleep now");
-    Serial.flush();
-    // (save in log?)
   }
 
   
@@ -141,10 +136,6 @@ void setup() {
   if (!connectMqtt()) {
     // (save in log?)
     Serial.println("MQTT connection failed");
-    //while(true);
-    // go back to sleep
-    Serial.println("Going to sleep now");
-    Serial.flush();
   }
   
   // send_data();
@@ -157,9 +148,21 @@ void setup() {
 
 void loop() {
 
-  delay(2000);
+  delay(20000);
 
-  client.loop();
+    // if connection returns false
+  if (!connectWiFi()) {
+    Serial.println("WiFi connection failed");
+  }
+
+  
+  // if connection returns false
+  if (!connectMqtt()) {
+    // (save in log?)
+    Serial.println("MQTT connection failed");
+  }
+
+  // client.loop();
  
   float t = dht.readTemperature();
 
@@ -169,6 +172,19 @@ void loop() {
   }
   Serial.print(F("Temperature: "));
   Serial.println(t);
+
+  static char msg[256];
+  
+  sprintf(msg, "{'ID': %s, 'temperature': %f}", "ciao", t);
+  client.publish(topic, msg);
+  Serial.print("load sent:  ");
+  Serial.println(msg);
+  delay(10);
+  
+  client.disconnect();
+  WiFi.disconnect();
+
+
 
 }
 

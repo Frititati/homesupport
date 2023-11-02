@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     topic_name = 'topic/test/load'
 
-    led = tempSub("cell_client", "mqtt.eclipseprojects.io", topic_name)
+    led = tempSub("cell_client", "filipi.local", topic_name)
     
     led.startOperation()
     

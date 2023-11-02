@@ -2,12 +2,12 @@ import time
 import json
 import paho.mqtt.client as paho
 
-MQTT_HOST="mqtt.eclipseprojects.io"
+MQTT_HOST="filipi.local"
 MQTT_PORT = 1883
 MQTT_CLIENT_ID = 'client_writer_test'
 # MQTT_USER = 'YOUR MQTT USER'
 # MQTT_PASSWORD = 'YOUR MQTT USER PASSWORD'
-TOPIC = "topic/test/load"
+TOPIC = 'topic/test/a'
 
 
 #define callback

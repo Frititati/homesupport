@@ -2,12 +2,12 @@ import paho.mqtt.client as mqtt
 import sqlite3
 from time import time
 
-MQTT_HOST="mqtt.eclipseprojects.io"
+MQTT_HOST="filipi.local"
 MQTT_PORT = 1883
 MQTT_CLIENT_ID = 'client_reader_test'
 # MQTT_USER = 'YOUR MQTT USER'
 # MQTT_PASSWORD = 'YOUR MQTT USER PASSWORD'
-TOPIC = 'topic/test/#'
+TOPIC = 'topic/test/a'
 
 DATABASE_FILE = 'messages_received.db'
 
