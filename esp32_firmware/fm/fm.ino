@@ -1,4 +1,7 @@
 
+#define NUMERIC_ID 5
+
+
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include "DHT.h"
@@ -6,14 +9,15 @@
 #define DHTPIN 4 // Digital pin connected to the DHT sensor
 #define DHTTYPE DHT11
 
+#define LEDPIN 2
+
 #define uS_TO_S_FACTOR 1000000 /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP 30       /* in seconds */
+
 
 DHT dht(DHTPIN, DHTTYPE);
 
 RTC_DATA_ATTR int bootCount = 0;
-
-const char *device_id = "esp1";
 
 // WiFi PARAMETERS
 const char *ssid = "Casa Chieri Sicuro 4";         // Enter your WiFi name
@@ -23,7 +27,7 @@ const int MAXWIFITRIES = 50;
 // MQTT BROKER
 const char *mqtt_broker = "filipi.local";
 const char *topic = "topic/test/load";
-const char *mqtt_username = "cell_publisher";
+// const char *mqtt_username = "cell_publisher";
 // const char *mqtt_password = "publisher";
 const int mqtt_port = 1883;
 
@@ -124,68 +128,15 @@ void callback(char *topic, byte *payload, unsigned int length)
   Serial.println("-----------------------");
 }
 
-// ostringstream ostream;
-
-// StaticJsonBuffer<300> JSONbuffer;
-// JsonObject& JSONencoder = JSONbuffer.createObject();
-
-// function to send data from hx711
-// void send_data(){
-//   //convert float to char
-//   static char units_to_send[10];
-//   static char msg[256];
-
-//   Serial.println("UNITS:  ");
-//   Serial.println(units);
-//   dtostrf (units, 9, 2, units_to_send);
-//   //trasmetto al server dati la misura sui pesi se non nulli
-//   if ( ready_to_send ){
-//   Serial.println(topic);
-//   sprintf(msg, "{'ID': %s, 'weight': %s}", "ciao", units_to_send);
-//   client.publish(topic, msg);
-//   Serial.print("load sent:  ");
-//   Serial.println(units_to_send);
-//   delay(10);
-//   } else{
-//     // Non si verifica mai - ready_to_send = 1 (hard coded)
-//     Serial.print("Not ready");
-//   }
-// }
-
-void setup()
-{
-  Serial.begin(115200);
-  // 1s delay
-  delay(1000);
-
-  ++bootCount;
-  Serial.print("Boot number: ");
-  Serial.println(bootCount);
-
-  print_wakeup_reason();
-
-  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
-
-  // start temperature sensor
-  dht.begin();
-
-  workatit();
-
-  client.disconnect();
-  WiFi.disconnect();
-  delay(1000);
-  Serial.flush();
-  esp_deep_sleep_start();
-  Serial.println("THIS WILL NEVER BE PRINTED");
-}
-
-bool workatit()
+bool work_part()
 {
   if (!connectWiFi())
   {
     Serial.println("FAIL: WiFi connection");
     return false;
   }
+
+  delay(500);
 
   if (!connectMqtt())
   {
@@ -211,6 +162,9 @@ bool workatit()
 
   static char msg[256];
 
+  String device_id = "esp";
+  device_id += String(NUMERIC_ID);
+
   sprintf(msg, "{'id': '%s', 'temperature': %f, 'humidity': %f, 'heat_index': %f}", device_id, t, h, hi);
 
   client.publish(topic, msg);
@@ -225,7 +179,85 @@ bool workatit()
   return true;
 }
 
+// void who_i_am()
+// {
+//   for (int i = 0; i < 5; i++)
+//   {
+//     delay(100);
+//     digitalWrite(LEDPIN, HIGH);
+//     delay(100);
+//     digitalWrite(LEDPIN, LOW);
+//   }
+
+//   delay(1000);
+
+//   for (int i = 0; i < NUMERIC_ID; i++)
+//   {
+//     delay(1000);
+//     digitalWrite(LEDPIN, HIGH);
+//     delay(1000);
+//     digitalWrite(LEDPIN, LOW);
+//   }
+
+//   delay(1000);
+
+//   for (int i = 0; i < 5; i++)
+//   {
+//     delay(100);
+//     digitalWrite(LEDPIN, HIGH);
+//     delay(100);
+//     digitalWrite(LEDPIN, LOW);
+//   }
+// }
+
+void who_i_am()
+{
+  for (int i = 0; i < 2; i++)
+  {
+    for (int i = 0; i < NUMERIC_ID; i++)
+    {
+      delay(150);
+      digitalWrite(LEDPIN, HIGH);
+      delay(150);
+      digitalWrite(LEDPIN, LOW);
+    }
+    delay(500);
+  }
+}
+
+void setup()
+{
+  Serial.begin(115200);
+  pinMode(LEDPIN, OUTPUT);
+
+  // 1s delay
+  delay(1000);
+
+  ++bootCount;
+  Serial.print("Boot number: ");
+  Serial.println(bootCount);
+
+  print_wakeup_reason();
+
+  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
+
+  // start temperature sensor
+  dht.begin();
+
+  work_part();
+
+  who_i_am();
+
+  client.disconnect();
+  WiFi.disconnect();
+  delay(500);
+  Serial.flush();
+  esp_deep_sleep_start();
+  Serial.println("THIS WILL NEVER BE PRINTED");
+}
+
 void loop()
 {
   Serial.println("NOTHING SHOULD BE CALLED HERE!");
+  delay(1000);
 }
