@@ -40,20 +40,20 @@ services:
       - "5432:5432"  # Expose PostgreSQL default port
 
   # MQTT Broker Service (Eclipse Mosquitto)
-  mqtt:
-    image: eclipse-mosquitto:latest
-    container_name: home_control_mqtt
-    ports:
-      - "1883:1883"  # MQTT protocol port
-      - "9001:9001"  # Websockets port
-    volumes:
-      - mosquitto_config:/mosquitto/config
-      - mosquitto_data:/mosquitto/data
-      - mosquitto_log:/mosquitto/log
+  # mqtt:
+  #   image: eclipse-mosquitto:latest
+  #   container_name: home_control_mqtt
+  #   ports:
+  #     - "1883:1883"  # MQTT protocol port
+  #     - "9001:9001"  # Websockets port
+  #   volumes:
+  #     - mosquitto_config:/mosquitto/config
+  #     - mosquitto_data:/mosquitto/data
+  #     - mosquitto_log:/mosquitto/log
 
 volumes:
   postgres_data:
-  mosquitto_config:
-  mosquitto_data:
-  mosquitto_log:
+  # mosquitto_config:
+  # mosquitto_data:
+  # mosquitto_log:
 

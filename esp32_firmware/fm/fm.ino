@@ -1,6 +1,5 @@
 
-#define NUMERIC_ID 5
-
+#define NUMERIC_ID 1
 
 #include <WiFi.h>
 #include <PubSubClient.h>
@@ -13,7 +12,6 @@
 
 #define uS_TO_S_FACTOR 1000000 /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP 30       /* in seconds */
-
 
 DHT dht(DHTPIN, DHTTYPE);
 
