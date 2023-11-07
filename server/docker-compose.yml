@@ -26,7 +26,7 @@ services:
     command: sh -c "npm install && node app.js"
     depends_on:
       - db
-      - mqtt
+      # - mqtt
 
   # PostgreSQL Database Service
   db:
