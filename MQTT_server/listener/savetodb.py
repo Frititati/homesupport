@@ -1,102 +1,116 @@
-import paho.mqtt.client as mqtt
+from sub.MyMQTT import *
 import psycopg2
 from time import time, sleep
 import sched
+import json
 
 MQTT_HOST = "filipi.local"
 MQTT_PORT = 1883
-MQTT_CLIENT_ID = 'client_reader_test'
-TOPIC = 'topic/test/a'
+MQTT_CLIENT_ID = "client_reader_test"
+TOPIC = "topic/test/a"
 
 # PostgreSQL connection parameters
-PG_HOST = 'filipi.local'
-PG_PORT = '5432'
-PG_DATABASE = 'your_postgresql_database'
-PG_USER = 'your_postgresql_user'
-PG_PASSWORD = 'your_postgresql_password'
+PG_HOST = "filipi.local"
+PG_PORT = "5432"
+PG_DATABASE = "production"
+PG_USER = "postgres"
+PG_PASSWORD = "KPqMh8Xg8KCnjqvSDnt3"
 
 # Reconnection interval in seconds (10 minutes)
 RECONNECT_INTERVAL = 600
 
-def on_connect(mqtt_client, user_data, flags, conn_result):
-    mqtt_client.subscribe(TOPIC)
 
-def on_message(mqtt_client, user_data, message):
-    payload = message.payload.decode('utf-8')
+class SaveClass:
+    def __init__(
+        self,
+        mqtt_client_id,
+        mqtt_broker,
+        mqtt_topic,
+        sql_host,
+        sql_port,
+        sql_database,
+        sql_user,
+        sql_password,
+    ):
+        self.mqtt_client_id = mqtt_client_id
+        self.mqtt_broker = mqtt_broker
+        self.mqtt_topic = mqtt_topic
+        self.sql_host = sql_host
+        self.sql_port = sql_port
+        self.sql_database = sql_database
+        self.sql_user = sql_user
+        self.sql_password = sql_password
+        self.sql_client = None
+        self.mqtt_client = None
 
-    print(f"pay {payload}")
+        self.reconnect()
 
-    db_conn = user_data['db_conn']
-    sql = 'INSERT INTO messages (topic, payload, created_at) VALUES (%s, %s, %s)'
-    cursor = db_conn.cursor()
-    cursor.execute(sql, (message.topic, payload, int(time())))
-    db_conn.commit()
-    cursor.close()
-
-def reconnect_mqtt(mqtt_client):
-    try:
-        mqtt_client.reconnect()
-    except Exception as e:
-        print(f"MQTT Reconnection Error: {str(e)}")
-
-def reconnect_postgres(pg_conn):
-    try:
-        pg_conn.close()
-        pg_conn = psycopg2.connect(
-            host=PG_HOST,
-            port=PG_PORT,
-            database=PG_DATABASE,
-            user=PG_USER,
-            password=PG_PASSWORD
-        )
-        return pg_conn
-    except Exception as e:
-        print(f"PostgreSQL Reconnection Error: {str(e)}")
-        return pg_conn
-
-def main():
-    # Connect to PostgreSQL
-    pg_conn = psycopg2.connect(
-        host=PG_HOST,
-        port=PG_PORT,
-        database=PG_DATABASE,
-        user=PG_USER,
-        password=PG_PASSWORD
-    )
-
-    # Create the messages table if it doesn't exist
-    sql = """
-    CREATE TABLE IF NOT EXISTS messages (
-        id SERIAL PRIMARY KEY,
-        topic TEXT NOT NULL,
-        payload TEXT NOT NULL,
-        created_at INTEGER NOT NULL
-    )
-    """
-    cursor = pg_conn.cursor()
-    cursor.execute(sql)
-    cursor.close()
-
-    mqtt_client = mqtt.Client(MQTT_CLIENT_ID)
-    mqtt_client.user_data_set({'db_conn': pg_conn})
-
-    mqtt_client.on_connect = on_connect
-    mqtt_client.on_message = on_message
-
-    mqtt_client.connect(MQTT_HOST, MQTT_PORT)
-    mqtt_client.loop_start()  # Start MQTT loop in the background
-
-    # Initialize the scheduler
-    s = sched.scheduler(time, sleep)
-
-    while True:
+    def reconnect(self):
         try:
-            s.enter(RECONNECT_INTERVAL, 1, reconnect_mqtt, (mqtt_client,))
-            pg_conn = reconnect_postgres(pg_conn)
-            s.enter(RECONNECT_INTERVAL, 1, reconnect_postgres, (pg_conn,))
-            s.run()
-        except KeyboardInterrupt:
-            break
+            self.mqtt_client = MyMQTT(self.mqtt_client_id, self.mqtt_broker, 1883, self)
+
+            self.sql_client = psycopg2.connect(
+                host=self.sql_host,
+                port=self.sql_port,
+                database=self.sql_database,
+                user=self.sql_user,
+                password=self.sql_password,
+            )
+
+            sql = """
+            CREATE TABLE IF NOT EXISTS messages (
+                id SERIAL PRIMARY KEY,
+                topic TEXT NOT NULL,
+                payload TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS temperature_readings (
+                id SERIAL PRIMARY KEY,
+                device_id INTEGER NOT NULL,
+                temperature NUMERIC NOT NULL,
+                humidity NUMERIC,
+                heat_index NUMERIC,
+                ts timestamptz DEFAULT now()
+            );
+            """
+            cursor = self.sql_client.cursor()
+            cursor.execute(sql)
+            cursor.close()
+        except Exception as e:
+            print(f"Reconnection Error: {str(e)}")
+
+    def startOperation(self):
+        self.mqtt_client.start()
+        time.sleep(1)
+        self.mqtt_client.mySubscribe(self.mqtt_topic)
+
+    def notify(self, topic, payload):
+        print(f"At '{topic}' received payload: {payload}")
+
+        try:
+            data = json.loads(payload)
+            device_id = data["id"]
+            temperature = data["temperature"]
+            humidity = data.get("humidity", None)
+            heat_index = data.get("heat_index", None)
+
+            sql = "INSERT INTO temperature_readings (device_id, temperature, humidity, heat_index) VALUES (%s, %s, %s, %s)"
+            cursor = self.sql_client.cursor()
+            cursor.execute(sql, (device_id, temperature, humidity, heat_index))
+            self.sql_client.commit()
+            cursor.close()
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON payload: {str(e)}")
+        except KeyError as e:
+            print(f"Missing key in payload: {str(e)}")
+
 
 if __name__ == "__main__":
-    main()
+
+    save_client = SaveClass("cell_client", "filipi.local", "topic/test/load", "filipi.local", 1883, "production", "postgres", "KPqMh8Xg8KCnjqvSDnt3")
+
+    save_client.startOperation()
+
+    # Keep the script running in order to keep on waiting
+    while True:
+        time.sleep(10)

@@ -5,6 +5,7 @@ services:
   frontend:
     image: node:latest  # Using the latest Node.js image
     container_name: home_control_frontend
+    restart: always
     volumes:
       - ./frontend:/app  # Mount your local frontend directory to the container
     working_dir: /app
@@ -18,6 +19,7 @@ services:
   backend:
     image: node:latest
     container_name: home_control_backend
+    restart: always
     volumes:
       - ./backend:/app  # Mount your local backend directory to the container
     working_dir: /app
@@ -32,12 +34,14 @@ services:
   db:
     image: postgres:latest
     container_name: home_control_db
+    restart: always
     volumes:
-      - postgres_data:/var/lib/postgresql/data  # Persist database data
+      - postgres_db:/var/lib/postgresql/data
     environment:
-      POSTGRES_PASSWORD: KPqMh8Xg8KCnjqvSDnt3  # Set the default postgres password
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=KPqMh8Xg8KCnjqvSDnt3
     ports:
-      - "5432:5432"  # Expose PostgreSQL default port
+      - "5432:5432"
 
   # MQTT Broker Service (Eclipse Mosquitto)
   # mqtt:
@@ -52,7 +56,8 @@ services:
   #     - mosquitto_log:/mosquitto/log
 
 volumes:
-  postgres_data:
+  postgres_db:
+    driver: local
   # mosquitto_config:
   # mosquitto_data:
   # mosquitto_log:
