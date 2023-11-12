@@ -1,20 +1,11 @@
 from sub.MyMQTT import *
 import psycopg2
-from time import time, sleep
-import sched
 import json
+import time
 
-MQTT_HOST = "filipi.local"
 MQTT_PORT = 1883
-MQTT_CLIENT_ID = "client_reader_test"
-TOPIC = "topic/test/a"
-
-# PostgreSQL connection parameters
-PG_HOST = "filipi.local"
-PG_PORT = "5432"
-PG_DATABASE = "production"
-PG_USER = "postgres"
-PG_PASSWORD = "KPqMh8Xg8KCnjqvSDnt3"
+SQL_PORT = 5432
+HOST = "192.168.0.45"
 
 # Reconnection interval in seconds (10 minutes)
 RECONNECT_INTERVAL = 600
@@ -27,7 +18,6 @@ class SaveClass:
         mqtt_broker,
         mqtt_topic,
         sql_host,
-        sql_port,
         sql_database,
         sql_user,
         sql_password,
@@ -36,22 +26,23 @@ class SaveClass:
         self.mqtt_broker = mqtt_broker
         self.mqtt_topic = mqtt_topic
         self.sql_host = sql_host
-        self.sql_port = sql_port
         self.sql_database = sql_database
         self.sql_user = sql_user
         self.sql_password = sql_password
         self.sql_client = None
         self.mqtt_client = None
 
-        self.reconnect()
+        self.beyyer()
 
-    def reconnect(self):
+    def beyyer(self):
         try:
-            self.mqtt_client = MyMQTT(self.mqtt_client_id, self.mqtt_broker, 1883, self)
+            self.mqtt_client = MyMQTT(
+                self.mqtt_client_id, self.mqtt_broker, MQTT_PORT, self
+            )
 
             self.sql_client = psycopg2.connect(
                 host=self.sql_host,
-                port=self.sql_port,
+                port=SQL_PORT,
                 database=self.sql_database,
                 user=self.sql_user,
                 password=self.sql_password,
@@ -66,7 +57,7 @@ class SaveClass:
             );
             CREATE TABLE IF NOT EXISTS temperature_readings (
                 id SERIAL PRIMARY KEY,
-                device_id INTEGER NOT NULL,
+                device_id TEXT NOT NULL,
                 temperature NUMERIC NOT NULL,
                 humidity NUMERIC,
                 heat_index NUMERIC,
@@ -88,11 +79,14 @@ class SaveClass:
         print(f"At '{topic}' received payload: {payload}")
 
         try:
-            data = json.loads(payload)
+            payload_parsed = str(payload.decode("utf-8")).replace("'", '"')
+            data = json.loads(payload_parsed)
             device_id = data["id"]
             temperature = data["temperature"]
             humidity = data.get("humidity", None)
             heat_index = data.get("heat_index", None)
+
+            print(f"dev {device_id}; temp {temperature}; humi {humidity}; heat {heat_index}")
 
             sql = "INSERT INTO temperature_readings (device_id, temperature, humidity, heat_index) VALUES (%s, %s, %s, %s)"
             cursor = self.sql_client.cursor()
@@ -106,8 +100,15 @@ class SaveClass:
 
 
 if __name__ == "__main__":
-
-    save_client = SaveClass("cell_client", "filipi.local", "topic/test/load", "filipi.local", 1883, "production", "postgres", "KPqMh8Xg8KCnjqvSDnt3")
+    save_client = SaveClass(
+        "boh",
+        HOST,
+        "topic/sensor/temperature",
+        HOST,
+        "production",
+        "postgres",
+        "KPqMh8Xg8KCnjqvSDnt3",
+    )
 
     save_client.startOperation()
 

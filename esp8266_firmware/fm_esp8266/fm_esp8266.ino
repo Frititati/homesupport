@@ -1,5 +1,5 @@
 
-#define NUMERIC_ID 1
+#define NUMERIC_ID 2
 
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
@@ -39,6 +39,8 @@ bool connectWiFi()
   // conuter of number of connection attempts
   int tries = 0;
   WiFi.mode(WIFI_STA);
+  WiFi.hostname("ESP-host");
+  WiFi.disconnect();
   WiFi.begin(ssid, password);
   Serial.println();
   Serial.print("Connecting to WiFi ");

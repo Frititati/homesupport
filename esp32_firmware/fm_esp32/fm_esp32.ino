@@ -24,7 +24,7 @@ const int MAXWIFITRIES = 50;
 
 // MQTT BROKER
 const char *mqtt_broker = "filipi.local";
-const char *topic = "topic/test/load";
+const char *topic = "topic/sensor/temperature";
 // const char *mqtt_username = "cell_publisher";
 // const char *mqtt_password = "publisher";
 const int mqtt_port = 1883;
@@ -160,7 +160,7 @@ bool work_part()
 
   static char msg[256];
 
-  String device_id = "esp";
+  String device_id = "esp32_";
   device_id += String(NUMERIC_ID);
 
   sprintf(msg, "{'id': '%s', 'temperature': %f, 'humidity': %f, 'heat_index': %f}", device_id, t, h, hi);
