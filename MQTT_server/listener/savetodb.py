@@ -10,6 +10,7 @@ HOST = "192.168.0.45"
 # Reconnection interval in seconds (10 minutes)
 RECONNECT_INTERVAL = 600
 
+
 class SaveClass:
     def __init__(
         self,
@@ -70,7 +71,7 @@ class SaveClass:
 
         while True:
             current_time = time.time()
-            
+
             # Check if it's time to reconnect MQTT
             if current_time - self.last_mqtt_connect_time >= RECONNECT_INTERVAL:
                 self.mqtt_client.stop()
@@ -87,7 +88,29 @@ class SaveClass:
 
     def notify(self, topic, payload):
         print(f"At '{topic}' received payload: {payload}")
-        # Handle MQTT notifications as before
+
+        try:
+            payload_parsed = str(payload.decode("utf-8")).replace("'", '"')
+            data = json.loads(payload_parsed)
+            device_id = data["id"]
+            temperature = data["temperature"]
+            humidity = data.get("humidity", None)
+            heat_index = data.get("heat_index", None)
+
+            print(
+                f"dev {device_id}; temp {temperature}; humi {humidity}; heat {heat_index}"
+            )
+
+            sql = "INSERT INTO temperature_readings (device_id, temperature, humidity, heat_index) VALUES (%s, %s, %s, %s)"
+            cursor = self.sql_client.cursor()
+            cursor.execute(sql, (device_id, temperature, humidity, heat_index))
+            self.sql_client.commit()
+            cursor.close()
+        except json.JSONDecodeError as e:
+            print(f"Failed to parse JSON payload: {str(e)}")
+        except KeyError as e:
+            print(f"Missing key in payload: {str(e)}")
+
 
 if __name__ == "__main__":
     save_client = SaveClass(
