@@ -28,7 +28,7 @@ app.get('/device/number', async (req, res) => {
 app.get('/temperature/:device/all', async (req, res) => {
   const deviceId = req.params.device;
   try {
-    const result = await pool.query('SELECT * FROM temperature_readings WHERE device_id = $1', [deviceId]);
+    const result = await pool.query('SELECT * FROM temperature_readings WHERE device_id = $1 ORDER BY ts', [deviceId]);
     res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
