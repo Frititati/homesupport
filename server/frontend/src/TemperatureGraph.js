@@ -27,18 +27,11 @@ const TemperatureGraph = ({ deviceId }) => {
         let temperature_data = null;
 
         if (true) {
-          let a = response_data[0];
-          let b = response_data[response_data.length - 1];
-
-          // console.log(a);
-          // console.log(b);
-
-          let first_ts = new Date(a.ts);
-          let last_ts = new Date(b.ts);
-          // console.log("AA " + first_ts.toLocaleString() + " BB " + last_ts.toLocaleString());
+          let first_ts = new Date(response_data[0].ts);
+          let last_ts = new Date(response_data[response_data.length - 1].ts);
+          
           const hours_s = [];
           const hours_e = [];
-          // const hours_b = [];
           const vals = [];
 
           while (first_ts <= last_ts) {
@@ -49,22 +42,22 @@ const TemperatureGraph = ({ deviceId }) => {
             first_ts.setTime(first_ts.getTime() + 60 * 60 * 1000);
           }
 
-          // console.log(hours_s.map(item => new Date(item).toLocaleString()));
-          // console.log(hours_e.map(item => new Date(item).toLocaleString()));
+          console.log(hours_s.map(item => new Date(item).toLocaleString()));
+          console.log(hours_e.map(item => new Date(item).toLocaleString()));
 
           for (let i = 0; i < hours_s.length; i++) {
-            let start = hours_s[i];
-            let end = hours_e[i];
+            let start = new Date(hours_s[i]);
+            let end = new Date(hours_e[i]);
 
-            let temp_list = [];
+            let temperature_list = [];
             for (let j = 0; j < response_data.length; j++) {
               // console.log("AAA" + response_data[j].ts);
-              let temp = new Date(response_data[j].ts);
+              let item_date = new Date(response_data[j].ts);
               // console.log("temp : " + temp.toLocaleString());
-              if (temp > start) {
-                if (temp < end) {
+              if (item_date.getTime() > start.getTime()) {
+                if (item_date.getTime() < end.getTime()) {
                   // console.log("count");
-                  temp_list.push(parseFloat(response_data[j].temperature.replace(",", ".")));
+                  temperature_list.push(parseFloat(response_data[j].temperature.replace(",", ".")));
                 }
               }
             }
@@ -72,10 +65,10 @@ const TemperatureGraph = ({ deviceId }) => {
             // console.log(temp_list);
 
             var sum = 0;
-            for (var number of temp_list) {
+            for (var number of temperature_list) {
               sum += number;
             }
-            let average = sum / Math.max(temp_list.length, 1);
+            let average = sum / Math.max(temperature_list.length, 1);
             // console.log(average);
 
             vals.push(average);
