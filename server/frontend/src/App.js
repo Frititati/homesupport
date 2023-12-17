@@ -10,16 +10,15 @@ const App = () => {
     <div style={{ 'padding': '2vh' }}>
       <div className='columns'>
         <div className='column is-6'>
-          <div className='box'>
-            <h1 className='title'>Temperature ESP32 #1</h1>
-            <TemperatureGraph deviceId="esp32_1" />
-          </div>
+          <TemperatureGraph deviceId="esp32_1" title="ESP32 #1" />
         </div>
         <div className='column is-6'>
-          <div className='box'>
-            <h1 className='title'>Temperature ESP32 #1</h1>
-            <TemperatureGraph deviceId="esp32_1" />
-          </div>
+          <TemperatureGraph deviceId="esp32_2" title="ESP32 #2" />
+        </div>
+      </div>
+      <div className='columns'>
+        <div className='column is-6'>
+          <TemperatureGraph deviceId="esp32_3" title="ESP32 #3" />
         </div>
       </div>
     </div>

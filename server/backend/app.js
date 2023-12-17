@@ -35,6 +35,26 @@ app.get('/temperature/:device/all', async (req, res) => {
   }
 });
 
+app.get('/temperature/:device/last', async (req, res) => {
+  const deviceId = req.params.device;
+  try {
+    const result = await pool.query('SELECT * FROM temperature_readings WHERE device_id = $1 ORDER BY ts DESC LIMIT 1', [deviceId]);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/temperature/:device/twodays', async (req, res) => {
+  const deviceId = req.params.device;
+  try {
+    const result = await pool.query('SELECT sub.* FROM (SELECT * FROM temperature_readings WHERE device_id = $1 ORDER BY ts DESC LIMIT 5760) sub ORDER BY ts ASC', [deviceId]);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/temperature/:device/hourly', async (req, res) => {
   const deviceId = req.params.device;
   try {
